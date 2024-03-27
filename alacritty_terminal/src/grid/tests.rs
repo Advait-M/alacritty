@@ -231,6 +231,7 @@ fn shrink_grow_reflow_cursor_position() {
 
     assert_eq!(grid.cursor.point.line, index::Line(0));
     assert_eq!(grid.cursor.point.column, index::Column(5));
+    assert_eq!(grid.history_size(), 0);
 
     // Causes a shrink_cols call.
     grid.resize(true, 3, 3);
@@ -239,9 +240,14 @@ fn shrink_grow_reflow_cursor_position() {
     // I believe Alacritty's lines map roughly to VisibleRows - so VisiblePoint (0, 2) below).
     assert_eq!(grid.cursor.point.line, index::Line(0));
     assert_eq!(grid.cursor.point.column, index::Column(2));
+    // Top row in history!
+    assert_eq!(grid.history_size(), 1);
 
     // Causes a grow_cols call.
     grid.resize(true, 3, 8);
+
+    // INCORRECT behavior? We expect history_size to be 0 at this point?
+    assert_eq!(grid.history_size(), 1);
 
     // We expect VisiblePoint(0, 5) here, but we end up getting (0, 0).
     assert_eq!(grid.cursor.point.line, index::Line(0));
