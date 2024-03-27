@@ -166,6 +166,10 @@ impl<T: GridCell + Default + PartialEq + Clone> Grid<T> {
 
             let cursor_buffer_line = self.lines - self.cursor.point.line.0 as usize - 1;
 
+            if i == cursor_buffer_line && reflow && row.is_clear() {
+                self.cursor.point.line += 1;
+            }
+
             if i == cursor_buffer_line && reflow {
                 // Resize cursor's line and reflow the cursor if necessary.
                 let mut target = self.cursor.point.sub(self, Boundary::Cursor, num_wrapped);
@@ -182,6 +186,7 @@ impl<T: GridCell + Default + PartialEq + Clone> Grid<T> {
                 let line_delta = self.cursor.point.line - target.line;
 
                 if line_delta != 0 && row.is_clear() {
+                    self.cursor.point.line -= line_delta;
                     continue;
                 }
 
@@ -206,7 +211,9 @@ impl<T: GridCell + Default + PartialEq + Clone> Grid<T> {
                 cell.flags_mut().insert(Flags::WRAPLINE);
             }
 
-            reversed.push(row);
+            if !row.is_clear() {
+                reversed.push(row);
+            }
         }
 
         // Make sure we have at least the viewport filled.
