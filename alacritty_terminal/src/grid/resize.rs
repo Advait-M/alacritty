@@ -211,9 +211,7 @@ impl<T: GridCell + Default + PartialEq + Clone> Grid<T> {
                 cell.flags_mut().insert(Flags::WRAPLINE);
             }
 
-            if !row.is_clear() {
-                reversed.push(row);
-            }
+            reversed.push(row);
         }
 
         // Make sure we have at least the viewport filled.
