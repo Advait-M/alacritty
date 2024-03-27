@@ -166,11 +166,17 @@ impl<T: GridCell + Default + PartialEq + Clone> Grid<T> {
 
             let cursor_buffer_line = self.lines - self.cursor.point.line.0 as usize - 1;
 
-            if i == cursor_buffer_line && reflow && row.is_clear() {
-                self.cursor.point.line += 1;
-            }
-
             if i == cursor_buffer_line && reflow {
+                if row.is_clear() {
+                    if i < self.display_offset {
+                        // Since we removed a line, rotate down the viewport.
+                        self.display_offset = self.display_offset.saturating_sub(1);
+                    }
+    
+                    // Rotate cursor down, if the line can be completely moved up (into history).
+                    self.cursor.point.line += 1;
+                }
+
                 // Resize cursor's line and reflow the cursor if necessary.
                 let mut target = self.cursor.point.sub(self, Boundary::Cursor, num_wrapped);
 
