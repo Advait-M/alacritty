@@ -215,9 +215,11 @@ fn shrink_reflow_twice() {
 }
 
 
-/// Regression test for bug where cursor position was not correctly reflowed after a resize.
+/// Tests shrinking the Grid and then growing it back to its original size, to confirm we
+/// adjust the cursor appropriately.
 #[test]
 fn shrink_grow_reflow_cursor_position() {
+    // Create a Grid with 3 rows and 8 columns.
     let mut grid = Grid::<Cell>::new(3, 8, 2);
     grid[Line(0)][Column(0)] = cell('1');
     grid[Line(0)][Column(1)] = cell('2');
@@ -225,34 +227,35 @@ fn shrink_grow_reflow_cursor_position() {
     grid[Line(0)][Column(3)] = cell('4');
     grid[Line(0)][Column(4)] = cell('5');
 
-    // Cursor position is (0, 5) visible point and (0, 5) absolute point.
+    // Set the cursor position to (0, 5). Note that NO rows are in scrollback currently.
     grid.cursor.point.line = index::Line(0);
     grid.cursor.point.column = index::Column(5);
 
+    // Confirm the cursor position and scrollback size is correct.
     assert_eq!(grid.cursor.point.line, index::Line(0));
     assert_eq!(grid.cursor.point.column, index::Column(5));
     assert_eq!(grid.history_size(), 0);
 
-    // Causes a shrink_cols call.
+    // Resize the Grid to have 3 columns, instead of 8 columns. Results in a shrink_columns call.
     grid.resize(true, 3, 3);
 
-    // Absolute cursor position is (1, 2). Visible point is (0, 2) since 1 row is scrollback.
-    // I believe Alacritty's lines map roughly to VisibleRows - so VisiblePoint (0, 2) below).
+    // Note that 1 row is now in scrollback history. Hence, the cursor should be at (0, 2), since
+    // it's in the "visible" coordinate system.
     assert_eq!(grid.cursor.point.line, index::Line(0));
     assert_eq!(grid.cursor.point.column, index::Column(2));
-    // Top row in history!
+    // Scrollback history should have 1 row.
     assert_eq!(grid.history_size(), 1);
 
-    // Causes a grow_cols call.
+    // Resize the Grid back to its original size of 3 rows and 8 columns. Results in a 
+    // grow_columns call.
     grid.resize(true, 3, 8);
 
-    // INCORRECT behavior? We expect history_size to be 0 at this point?
-    assert_eq!(grid.history_size(), 0);
-
-    // We expect VisiblePoint(0, 5) here, but we end up getting (0, 0).
+    // We expect the cursor to be back at (0, 5), as we grew the Grid back to its original size.
     assert_eq!(grid.cursor.point.line, index::Line(0));
-    // This assertion FAILS!
     assert_eq!(grid.cursor.point.column, index::Column(5));
+    // We expect the scrollback history to be empty since we grew the Grid back to its original size
+    // and removed the row that was in scrollback history (it's "visible" once again).
+    assert_eq!(grid.history_size(), 0);
 }
 
 #[test]
